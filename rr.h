@@ -2,83 +2,69 @@
 #define RR_H
 #include <vector>
 #include <fstream>
+#include <iomanip>
+#include <queue>
 #include "Proceso.h"
 
 using namespace std;
 
-double ejecutarRR(vector<Actividad> lista, int quantum, ofstream &reporte) {
-    int n = lista.size();
-    
-    int reloj = lista[0].ti;
-    for(int i = 1; i < n; i++) {
-        if(lista[i].ti < reloj) reloj = lista[i].ti;
-    }
+void ejecutarRR(vector<Actividad> lista, int Q, ofstream &reporte, double &out_pT, double &out_pE) {
+    int n = lista.size(), reloj = 0, completados = 0;
+    queue<int> cola_ready;
+    vector<bool> en_cola(n, false), completado(n, false);
+    double sumaT = 0, sumaI = 0; 
+    long long sumaE = 0;
 
-    vector<int> cola;
-    vector<bool> en_cola(n, false);
-    vector<bool> completado(n, false);
-    int completados = 0;
-    double sumaT = 0, sumaE = 0, sumaI = 0;
+    reporte << "\nALGORITMO ROUND ROBIN (Q=" << Q << ")\n";
+    reporte << left << setw(6) << "ID" << "| ti | t  | tf | T  | " << setw(12) << "E" << " | I\n";
 
-    auto meter_llegadas = [&]() {
+    auto revisar_llegadas = [&]() {
         for (int i = 0; i < n; i++) {
-            if (!en_cola[i] && !completado[i] && lista[i].ti <= reloj) {
-                cola.push_back(i);
+            if (!completado[i] && !en_cola[i] && lista[i].ti <= reloj) {
+                cola_ready.push(i);
                 en_cola[i] = true;
             }
         }
     };
 
-    meter_llegadas();
-
-    reporte << "RESULTADOS DE ROUND ROBIN(Q=" << quantum << ") ---\n";
-    reporte << "ID\tti\tt\ttf\tT\tE\tI\n";
+    revisar_llegadas();
 
     while (completados < n) {
-        if (cola.empty()) {
-            reloj++;
-            meter_llegadas();
-            continue;
+        if (cola_ready.empty()) { reloj++; revisar_llegadas(); continue; }
+
+        int idx = cola_ready.front();
+        cola_ready.pop();
+
+        int t_ejec = min(Q, lista[idx].t_restante);
+        for(int i = 0; i < t_ejec; i++) { 
+            reloj++; 
+            revisar_llegadas(); 
         }
+        lista[idx].t_restante -= t_ejec;
 
-        int actual = cola[0];
-        cola.erase(cola.begin());
+        if (lista[idx].t_restante == 0) {
+            lista[idx].tf = reloj;
+            lista[idx].T = lista[idx].tf - lista[idx].ti;
+            lista[idx].E = (long long)lista[idx].T * lista[idx].t;
+            lista[idx].I = (double)lista[idx].t / lista[idx].T;
 
-        int ejecucion = lista[actual].t_restante;
-        if (ejecucion > quantum) {
-            ejecucion = quantum;
-        }
+            sumaT += lista[idx].T;
+            sumaE += lista[idx].E;
+            sumaI += lista[idx].I;
 
-        for(int t = 0; t < ejecucion; t++) {
-            reloj++;
-            meter_llegadas();
-        }
+            reporte << left << setw(6) << lista[idx].id << "| " << setw(2) << right << lista[idx].ti << " | " << setw(2) << left << lista[idx].t << " | " << setw(2) << lista[idx].tf << " | " << setw(2) << lista[idx].T << " | " << setw(12) << lista[idx].E << "| " << fixed << setprecision(4) << lista[idx].I << "\n";
 
-        lista[actual].t_restante -= ejecucion;
-
-        if (lista[actual].t_restante > 0) {
-            cola.push_back(actual);
-        } else {
-            lista[actual].tf = reloj;
-            lista[actual].T = lista[actual].tf - lista[actual].ti;
-            lista[actual].E = (long long)lista[actual].T * lista[actual].t;
-            lista[actual].I = (double)lista[actual].t / lista[actual].T;
-
-            sumaT += lista[actual].T;
-            sumaE += lista[actual].E;
-            sumaI += lista[actual].I;
-
-            reporte << lista[actual].id << "\t" << lista[actual].ti << "\t" << lista[actual].t << "\t"
-                    << lista[actual].tf << "\t" << lista[actual].T << "\t" << lista[actual].E << "\t" << lista[actual].I << "\n";
-            
-            completado[actual] = true;
+            completado[idx] = true;
             completados++;
+        } else {
+            revisar_llegadas();
+            cola_ready.push(idx); 
         }
     }
 
-    double promT = sumaT / n;
-    reporte << "\nPROMEDIOS RR -> T: " << promT << " | E: " << sumaE/n << " | I: " << sumaI/n << "\n\n";
-    return promT;
-}
+    out_pT = sumaT / n;
+    out_pE = (double)sumaE / n;
 
+    reporte << "Promedios -> T: " << out_pT << " | E: " << out_pE << " | I: " << sumaI/n << "\n\n";
+}
 #endif
