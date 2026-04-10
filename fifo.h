@@ -2,41 +2,52 @@
 #define FIFO_H
 #include <vector>
 #include <fstream>
+#include <iomanip>
 #include "Proceso.h"
 
 using namespace std;
 
-double ejecutarFIFO(vector<Actividad> lista, ofstream &reporte) {
-    int reloj = 0;
-    double sumaT = 0, sumaE = 0, sumaI = 0;
+void ejecutarFIFO(vector<Actividad> lista, ofstream &reporte, double &out_pT, double &out_pE) {
+    int n = lista.size(), reloj = 0, completados = 0;
+    vector<bool> hecho(n, false);
+    double sumaT = 0, sumaI = 0; 
+    long long sumaE = 0;
 
-    reporte << "RESULTADOS DE FIFO\n";
-    reporte << "ID\tti\tt\ttf\tT\tE\tI\n";
+    reporte << "\nALGORITMO FIFO\n";
+    reporte << left << setw(6) << "ID" << "| ti | t  | tf | T  | " << setw(12) << "E" << " | I\n";
 
-    //procesa exactamente en el orden del archivo
-    for (int i = 0; i < lista.size(); i++) {
-        if (reloj < lista[i].ti) {
-            reloj = lista[i].ti; //se esper a que llegue el proceso
+    while (completados < n) {
+        int seleccionado = -1;
+        
+        for (int i = 0; i < n; i++) {
+            if (!hecho[i] && lista[i].ti <= reloj) {
+                if (seleccionado == -1 || lista[i].ti < lista[seleccionado].ti) {
+                    seleccionado = i;
+                }
+            }
         }
 
-        lista[i].tf = reloj + lista[i].t;
-        lista[i].T = lista[i].tf - lista[i].ti;
-        lista[i].E = (long long)lista[i].T * lista[i].t;
-        lista[i].I = (double)lista[i].t / lista[i].T;
+        if (seleccionado == -1) { reloj++; continue; }
 
-        sumaT += lista[i].T;
-        sumaE += lista[i].E;
-        sumaI += lista[i].I;
+        reloj += lista[seleccionado].t;
+        lista[seleccionado].tf = reloj;
+        lista[seleccionado].T = lista[seleccionado].tf - lista[seleccionado].ti;
+        lista[seleccionado].E = (long long)lista[seleccionado].T * lista[seleccionado].t;
+        lista[seleccionado].I = (double)lista[seleccionado].t / lista[seleccionado].T;
 
-        reporte << lista[i].id << "\t" << lista[i].ti << "\t" << lista[i].t << "\t"
-                << lista[i].tf << "\t" << lista[i].T << "\t" << lista[i].E << "\t" << lista[i].I << "\n";
+        sumaT += lista[seleccionado].T;
+        sumaE += lista[seleccionado].E;
+        sumaI += lista[seleccionado].I;
 
-        reloj = lista[i].tf;
+        reporte << left << setw(6) << lista[seleccionado].id << "| " << setw(2) << right << lista[seleccionado].ti << " | " << setw(2) << left << lista[seleccionado].t << " | " << setw(2) << lista[seleccionado].tf << " | " << setw(2) << lista[seleccionado].T << " | " << setw(12) << lista[seleccionado].E << "| " << fixed << setprecision(4) << lista[seleccionado].I << "\n";
+
+        hecho[seleccionado] = true;
+        completados++;
     }
 
-    double promT = sumaT / lista.size();
-    reporte << "\nPROMEDIOS FIFO -> T: " << promT << " | E: " << sumaE/lista.size() << " | I: " << sumaI/lista.size() << "\n\n";
-    return promT;
-}
+    out_pT = sumaT / n;
+    out_pE = (double)sumaE / n;
 
+    reporte << "Promedios -> T: " << out_pT << " | E: " << out_pE << " | I: " << sumaI/n << "\n";
+}
 #endif
