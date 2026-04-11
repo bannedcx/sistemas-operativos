@@ -7,7 +7,7 @@
 
 using namespace std;
 
-void ejecutarLIFO(vector<Actividad> lista, ofstream &reporte, double &out_pT, double &out_pE) {
+void ejecutarLIFO(vector<Actividad> lista, ofstream &reporte, double &out_pT, double &out_pE, double &out_pI) {
     int n = lista.size(), reloj = 0, completados = 0;
     vector<bool> hecho(n, false);
     double sumaT = 0, sumaI = 0; 
@@ -18,10 +18,9 @@ void ejecutarLIFO(vector<Actividad> lista, ofstream &reporte, double &out_pT, do
 
     while (completados < n) {
         int seleccionado = -1;
-
-        for (int i = 0; i < n; i++) {
+        for (int i = n - 1; i >= 0; i--) {
             if (!hecho[i] && lista[i].ti <= reloj) {
-                if (seleccionado == -1 || lista[i].ti > lista[seleccionado].ti) {
+                if (seleccionado == -1){
                     seleccionado = i;
                 }
             }
@@ -32,7 +31,7 @@ void ejecutarLIFO(vector<Actividad> lista, ofstream &reporte, double &out_pT, do
         reloj += lista[seleccionado].t;
         lista[seleccionado].tf = reloj;
         lista[seleccionado].T = lista[seleccionado].tf - lista[seleccionado].ti;
-        lista[seleccionado].E = (long long)lista[seleccionado].T * lista[seleccionado].t;
+        lista[seleccionado].E = lista[seleccionado].T - lista[seleccionado].t; // Formula: Resta
         lista[seleccionado].I = (double)lista[seleccionado].t / lista[seleccionado].T;
 
         sumaT += lista[seleccionado].T;
@@ -44,10 +43,10 @@ void ejecutarLIFO(vector<Actividad> lista, ofstream &reporte, double &out_pT, do
         hecho[seleccionado] = true;
         completados++;
     }
-
     out_pT = sumaT / n;
     out_pE = (double)sumaE / n;
+    out_pI = sumaI / n;
 
-    reporte << "Promedios -> T: " << out_pT << " | E: " << out_pE << " | I: " << sumaI/n << "\n";
+    reporte << "Promedios -> T: " << out_pT << " | E: " << out_pE << " | I: " << out_pI << "\n";
 }
 #endif
