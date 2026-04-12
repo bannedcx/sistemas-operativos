@@ -8,7 +8,7 @@
 
 using namespace std;
 
-void ejecutarRR(vector<Actividad> lista, int Q, ofstream &reporte, double &out_pT, double &out_pE) {
+void ejecutarRR(vector<Actividad> lista, int Q, ofstream &reporte, double &out_pT, double &out_pE, double &out_pI) {
     int n = lista.size(), reloj = 0, completados = 0;
     queue<int> cola_ready;
     vector<bool> en_cola(n, false), completado(n, false);
@@ -45,7 +45,7 @@ void ejecutarRR(vector<Actividad> lista, int Q, ofstream &reporte, double &out_p
         if (lista[idx].t_restante == 0) {
             lista[idx].tf = reloj;
             lista[idx].T = lista[idx].tf - lista[idx].ti;
-            lista[idx].E = (long long)lista[idx].T * lista[idx].t;
+            lista[idx].E = lista[idx].T - lista[idx].t;
             lista[idx].I = (double)lista[idx].t / lista[idx].T;
 
             sumaT += lista[idx].T;
@@ -64,7 +64,8 @@ void ejecutarRR(vector<Actividad> lista, int Q, ofstream &reporte, double &out_p
 
     out_pT = sumaT / n;
     out_pE = (double)sumaE / n;
+    out_pI = sumaI / n;
 
-    reporte << "Promedios -> T: " << out_pT << " | E: " << out_pE << " | I: " << sumaI/n << "\n\n";
+    reporte << "Promedios -> T: " << out_pT << " | E: " << out_pE << " | I: " << out_pI << "\n\n";
 }
 #endif
