@@ -7,9 +7,9 @@
 #include <algorithm>
 #include <iomanip>
 #include "Proceso.h"
-#include "Fifo.h"
-#include "Lifo.h"
-#include "Rr.h"
+#include "fifo.h"
+#include "lifo.h"
+#include "rr.h"
 
 using namespace std;
 using namespace std::chrono;
@@ -48,20 +48,20 @@ int main() {
 
     ofstream reporte("resultados.txt");
 
-    double pt_fifo, pe_fifo;
-    double pt_lifo, pe_lifo;
-    double pt_rr, pe_rr;
+    double pt_fifo, pe_fifo, pi_fifo;
+    double pt_lifo, pe_lifo, pi_lifo;
+    double pt_rr, pe_rr, pi_rr;
 
     auto s1 = high_resolution_clock::now();
-    ejecutarFIFO(lista_original, reporte, pt_fifo, pe_fifo);
+    ejecutarFIFO(lista_original, reporte, pt_fifo, pe_fifo, pi_fifo);
     double ms_fifo = duration_cast<microseconds>(high_resolution_clock::now() - s1).count() / 1000.0;
 
     auto s2 = high_resolution_clock::now();
-    ejecutarLIFO(lista_original, reporte, pt_lifo, pe_lifo);
+    ejecutarLIFO(lista_original, reporte, pt_lifo, pe_lifo, pi_lifo);
     double ms_lifo = duration_cast<microseconds>(high_resolution_clock::now() - s2).count() / 1000.0;
 
     auto s3 = high_resolution_clock::now();
-    ejecutarRR(lista_original, quantum, reporte, pt_rr, pe_rr);
+    ejecutarRR(lista_original, quantum, reporte, pt_rr, pe_rr, pi_rr);
     double ms_rr = duration_cast<microseconds>(high_resolution_clock::now() - s3).count() / 1000.0;
 
     reporte << "\nTIEMPOS DE EJECUCION\n";
@@ -70,17 +70,18 @@ int main() {
     reporte << "Round Robin: " << ms_rr << " ms\n";
 
     reporte << "\nCOMPARACION DE PROMEDIOS\n";
-    reporte << "- FIFO        -> Promedio T: " << pt_fifo << " | Promedio E: " << pe_fifo << "\n";
-    reporte << "- LIFO        -> Promedio T: " << pt_lifo << " | Promedio E: " << pe_lifo << "\n";
-    reporte << "- ROUND ROBIN -> Promedio T: " << pt_rr   << " | Promedio E: " << pe_rr << "\n";
+    reporte << "- FIFO        -> Promedio T: " << pt_fifo << " | Promedio E: " << pe_fifo << " | Promedio I: " << pi_fifo << "\n";
+    reporte << "- LIFO        -> Promedio T: " << pt_lifo << " | Promedio E: " << pe_lifo << " | Promedio I: " << pi_lifo << "\n";
+    reporte << "- ROUND ROBIN -> Promedio T: " << pt_rr   << " | Promedio E: " << pe_rr   << " | Promedio I: " << pi_rr << "\n";
 
-    double min_pt = min({pt_fifo, pt_lifo, pt_rr});
-    string ganador = (min_pt == pt_fifo) ? "FIFO" : (min_pt == pt_lifo) ? "LIFO" : "ROUND ROBIN";
+    double min_pi = min({pi_fifo, pi_lifo, pi_rr});
+    string ganador = (min_pi == pi_fifo) ? "FIFO" : (min_pi == pi_lifo) ? "LIFO" : "ROUND ROBIN";
 
-    reporte << "\nEl algoritmo mas optimo es " << ganador << " (menor pT)\n";
+    reporte << "\nEl algoritmo mas optimo es " << ganador << " (menor pI)\n";
 
     reporte.close();
-    cout << "calculos en el txt" << endl;
+    cout << "Calculos completados, mira el txt
+        " << endl;
 
     return 0;
 }
